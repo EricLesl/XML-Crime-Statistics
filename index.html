@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>XML Project #2</title>
+	<script type="text/javascript">
+		//loads the XML file when the web page loads, not when button is clicked.
+	function loadXMLDoc() {
+	  var xmlhttp = new XMLHttpRequest();
+	  xmlhttp.onreadystatechange = function() {
+	    if (this.readyState == 4 && this.status == 200) {
+	    	//Run the loadNow function
+	      loadNow(this);
+	    }
+	  };
+	  xmlhttp.open("GET", "crime.xml", true);
+	  xmlhttp.send();
+	}
+
+	function loadNow(xml){
+		//Saves xml file to a variable as an object
+		var xmlDoc = xml.responseXML;
+		//Saving for use in for loop as a counter length
+		var regions = xmlDoc.getElementsByTagName('region');
+		var select = document.getElementById('regionSelect');
+		for(i=0; i < regions.length; i++){
+			//For each region node, run the loop once and add it to the select dropdown, rather than hardcoding in the html.
+			var option = xmlDoc.getElementsByTagName('region')[i].getAttribute('name');
+			select.options[select.options.length] = new Option(option, option);			
+		}
+	}
+
+
+	function loadXslt(filename)
+	{
+	if (window.ActiveXObject)
+	{
+	  xhttp = new ActiveXObject("Msxml2.XMLHTTP");
+	}
+	else
+	{
+	  xhttp = new XMLHttpRequest();
+	}
+	xhttp.open("GET", filename, false);
+
+	try
+	{
+	  xhttp.responseType = "msxml-document"
+	}
+	catch (err) {}
+	xhttp.send("");
+	return xhttp.responseXML;
+	}
+
+	//This function is the function that runs when the submit button is pressed. It loads the crime.xml a second time, which maybe isn't the most efficient way to code this as it was already saved to a variable when the page loaded, but I'm not too concernded with the efficiency as long as it works...
+	function RenderXSLT()
+	{
+	//Saves the crime.xml as an object called xml
+	xml = loadXslt("crime.xml");
+	//Saves the crimestyles.xslt as an object called xslt
+	xslt = loadXslt("crimestyles.xslt");
+
+	//Saves e as placeholder for regionSelect selection box
+	var e = document.getElementById("regionSelect");
+	//Saves the value of the selected option to the variable selectedRegion
+	var selectedRegion = e.options[e.selectedIndex].value;
+
+	if (window.ActiveXObject || xhttp.responseType == "msxml-document")
+	{
+	  var template = new ActiveXObject("Msxml2.XslTemplate.6.0");
+	  template.stylesheet = xslt;
+
+	  var proc = template.createProcessor();
+	  proc.input = xml;
+	  //Sends the value of selectedRegion to the XSLT as 'selected'
+	  proc.addParameter("selected", selectedRegion);
+
+	  proc.transform();
+	  document.getElementById("xsltOutputContainer").innerHTML = proc.output;
+	}
+	else if (typeof XSLTProcessor !== 'undefined')
+	{
+	  var xsltProcessor = new XSLTProcessor();
+	  xsltProcessor.importStylesheet(xslt);
+	  
+	  //Sends the value of selectedRegion to the XSLT as 'selected'
+	  xsltProcessor.setParameter(null, "selected", selectedRegion);
+
+	  var resultDocument = xsltProcessor.transformToFragment(xml, document);
+	  document.getElementById("xsltOutputContainer").innerHTML = "";
+	  document.getElementById("xsltOutputContainer").appendChild(resultDocument);
+	}
+	}
+
+	</script>
+</head>
+<body onload="loadXMLDoc();">
+	<img src='finger.png' style="max-width: 100px; float: left;"/><h1>Incidents of Crime in Canada for 2013</h1>
+		<br />
+		<br />
+    <h3>Select region:</h3>
+    <select id='regionSelect'></select>
+    <input type="submit" value="Submit" onclick="RenderXSLT()"/>
+    <br /><br />
+    <div id="xsltOutputContainer"/>
+</body>
+</html>
